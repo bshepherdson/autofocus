@@ -100,13 +100,6 @@ next = do
 
 
 
--- helper for next
-toReview list = do
-  set $ s { mode = Review }
-  putStrLn $ "Reached end of " ++ list ++ " list. Moving to review."
-
-
-
 -- state machine. if at the end of:
 -- open -- go to closed
 -- closed
