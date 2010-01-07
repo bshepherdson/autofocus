@@ -20,7 +20,8 @@ instance Functor (Zipper a) where
 type Record = String
 
 -- Open gets only one pass. Closed records the pass number, and the number of items actioned this pass
-data AFModes = Open | Closed Int Int | Review
+-- Work stores the active record and the mode we were in previously.
+data AFModes = Open | Closed Int Int | Review | Work Record AFModes
 
 data AFState = AFS {
      mode      :: AFModes
@@ -43,6 +44,10 @@ snoc xs x = reverse . (x:) . reverse $ xs
 
 zipHead Empty       = "<none>"
 zipHead (Zip _ x _) = x
+
+flipZip Empty = Empty
+flipZip (Zip l x r) = let (x':xs') = reverse l ++ [x] ++ r
+                      in  Zip [] x' xs'
 
 commands :: M.Map String Command
 commands = M.fromList [
@@ -79,11 +84,26 @@ next = do
                                putStrLn $ "Active entry now: '" ++ zipHead (closed s) ++ "'"
               Zip l x (r:rs) -> do set $ s { open = Zip (x:l) r rs }
                                    putStrLn $ "Active entry now: '" ++ r ++ "'"
-    Closed pass acted -> case closed s of
-                           Empty -> do set $ s { mode = Open }
+    Closed pass acted -> case (closed s, review s) of
+                           (Empty, Zip _ _ _) -> do set $ s { mode = Review }
+                                                    putStrLn "Reached end of closed list. Moving to review."
+                           (c@(Zip _ _ []), Zip _ _ _) -> do set $ s { mode = Review, closed = flipZip c }
+                                                             putStrLn "Reached end of closed list. Moving to review."
+                           (c@(Zip _ _ []), Empty) | acted > 0 -> do set $ s { mode = Closed (pass+1) 0, closed = flipZip c }
+                                                                     putStrLn $ "Reached end of closed list. Actioned " ++ show acted ++ " items last pass." ++
+                                                                       ++ " Returning to start of closed list."
+                                                   | pass  > 0 -> do set $ s { mode = Open, closed = flipZip c }
+                                                                     putStrLn "Reached end of closed list. Did not action anything, but not first pass. Moving to open list."
+                                                   | otherwise -> do set $ s { mode = Closed 0 0, review = closed s, closed = open s, open = Empty }
+                                                                     putStrLn $ "Reached end of closed list. First pass, did not action anything. " 
+                                                                       ++ "Closed list up for review, open list now closed. Moving to the newly closed list."
 
 
 
+-- helper for next
+toReview list = do
+  set $ s { mode = Review }
+  putStrLn $ "Reached end of " ++ list ++ " list. Moving to review."
 
 
 
