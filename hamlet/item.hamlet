@@ -1,0 +1,24 @@
+%h1
+    $region$ $itemTitle.item$
+$if itemBubble.item
+    %p 
+        This item is up for deletion and must either be abandoned or re-entered.
+%ul
+    $if not.itemBubble.item
+        %li
+            %form!method=POST!action=@NextR@!name=nextform
+                %a!href="javascript:document.nextform.submit()" Next
+    %li
+        %form!method=POST!action=@DeleteR@!name=deleteform
+            %input!type=hidden!name=item!value=$iidstr$
+            %a!href="javascript:document.deleteform.submit()" Delete this task
+    %li
+        %form!method=POST!action=@ReEnterR@!name=rephrasereenterform
+            %a#rephraselink!name=link!style="display:block"!href="javascript:showReEntry()" Rephrase and re-enter
+            %input#rephrasetitle!type=text!size=40!name=title!style="display:none"
+            %input#rephrasesubmit!type=submit!style="display:none"!name=button!value=Rephrase
+            %input!type=hidden!name=item!value=$iidstr$
+    %li
+        %form!method=POST!action=@ReEnterR@!name=reenterform
+            %a!href="javascript:document.reenterform.submit()" Re-enter without rephrasing
+            %input!type=hidden!name=item!value=$iidstr$

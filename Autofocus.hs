@@ -75,7 +75,13 @@ mkYesodData "Autofocus" [$parseRoutes|
 /favicon.ico FaviconR GET
 /robots.txt RobotsR GET
 
-/ RootR GET
+/        RootR    GET
+/view    ViewR    GET
+/next    NextR    POST
+/delete  DeleteR  POST
+/reenter ReEnterR POST
+/new     NewR     GET POST
+
 |]
 
 -- Please see the documentation for the Yesod typeclass. There are a number
@@ -123,7 +129,7 @@ instance YesodAuth Autofocus where
     type AuthId Autofocus = UserId
 
     -- Where to send a user after successful login
-    loginDest _ = RootR
+    loginDest _ = ViewR
     -- Where to send a user after logout
     logoutDest _ = RootR
 
@@ -132,7 +138,7 @@ instance YesodAuth Autofocus where
         case x of
             Just (uid, _) -> return $ Just uid
             Nothing -> do
-                fmap Just $ insert $ User (credsIdent creds) Nothing
+                fmap Just $ insert $ User (credsIdent creds) Nothing True Nothing True False
 
     showAuthId _ = showIntegral
     readAuthId _ = readIntegral
@@ -193,7 +199,7 @@ instance YesodAuthEmail Autofocus where
                 case emailUser e of
                     Just uid -> return $ Just uid
                     Nothing -> do
-                        uid <- insert $ User email Nothing
+                        uid <- insert $ User email Nothing True Nothing True False
                         update eid [EmailUser $ Just uid, EmailVerkey Nothing]
                         return $ Just uid
     getPassword = runDB . fmap (join . fmap userPassword) . get
